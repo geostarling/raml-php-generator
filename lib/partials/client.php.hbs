@@ -6,8 +6,6 @@ class Client
 
     public $resources;
 
-    public $resource;
-
     public function __construct($options = [])
     {
         $baseUriParameters = [];
@@ -15,15 +13,18 @@ class Client
             $baseUriParameters = $options['baseUriParameters'];
             unset($options['baseUriParameters']);
         }
+        $baseUri;
         if (isset($options['baseUri'])) {
-            $options['base_uri'] = template($options['baseUri'], $baseUriParameters);
+            $baseUri = template($options['baseUri'], $baseUriParameters);
             unset($options['baseUri']);
         } else {
-            $options['base_uri'] = template({{{stringify baseUri}}}, [{{#each baseUriParameters}}'{{displayName}}' => '{{{stringify default}}}'{{#unless @last}}, {{/unless}}{{/each}}]);
+            $baseUri = template({{{stringify baseUri}}}, [{{#each baseUriParameters}}'{{@key}}' => '{{{stringify default}}}'{{#unless @last}}, {{/unless}}{{/each}}]);
+
         }
+        $options['base_uri'] = ltrim($baseUri, "/") . "/";
         $this->options = $options;
         $this->httpClient = new HttpClient($this->options);
-        $this->resources = new {{pascalCase resources.id}}('.', $this);
+        $this->resources = new RootResource('.', $this);
     }
 
     protected function buildRequest($path, $method, $body = null, $options = [])

@@ -1,0 +1,59 @@
+class {{pascalCase relativeUri}} extends Resource
+{
+    {{#each resources}}
+    {{#unless uriParameters}}
+    public ${{camelCase relativeUri}};
+    {{/unless}}
+    {{/each}}
+
+    public function __construct($uri, $client)
+    {
+        parent::__construct($uri, $client);
+
+        {{#each resources}}
+        {{#unless uriParameters}}
+        $this->{{camelCase relativeUri}} = new {{pascalCase relativeUri}}($this->uri . {{{stringify relativeUri}}}, $client);
+        {{/unless}}
+        {{/each}}
+    }
+
+    {{#each resources}}
+    {{#if uriParameters}}
+    public function {{camelCase relativeUri}}({{#each uriParameters}}${{@key}}{{#if default}} = {{{stringify default}}}{{/if}}{{#unless @last}}, {{/unless}}{{/each}})
+    {
+        {{#each uriParameters}}
+        {{#if default}}
+        if (is_null(${{@key}})) {
+            ${{@key}} = {{{stringify default}}};
+        }
+        {{/if}}
+        {{/each}}
+        $uri = $this->uri . template({{{stringify relativeUri}}}, [{{#each uriParameters}}"{{@key}}" => ${{@key}}{{#unless @last}}, {{/unless}}{{/each}}]);
+
+        return new {{pascalCase relativeUri}}($uri, $this->client);
+    }
+    {{/if}}
+    {{/each}}
+
+    {{#each methods}}
+    public function {{camelCase method}}($body = null, $options = [])
+    {
+        {{#if (keys headers)}}
+        {{#each headers}}
+        if (!isset($options['headers'][{{{stringify (upperCase @key)}}}])
+            && !isset($options['headers'][{{{stringify (lowerCase @key)}}}])
+        ) {
+            $options['headers'][{{{stringify (lowerCase @key)}}}] = {{{stringify default}}};
+        }
+        {{/each}}
+        {{/if}}
+        return $this->client->request($this->uri, {{{stringify (upperCase method)}}}, $body, $options);
+    }
+    {{/each}}
+
+
+}
+
+{{#each resources}}
+    {{> resource}}
+{{/each}}
